@@ -69,14 +69,14 @@
     },
     {
       "file": "app/login.tsx",
-      "sink": "signInWithOtp",
-      "sends": "Email address",
+      "sink": "signUp(",
+      "sends": "Email + password (sign-up)",
       "to": "Supabase Auth"
     },
     {
       "file": "app/login.tsx",
-      "sink": "verifyOtp",
-      "sends": "Email + one-time code",
+      "sink": "signInWithPassword",
+      "sends": "Email + password (log-in)",
       "to": "Supabase Auth"
     },
     {

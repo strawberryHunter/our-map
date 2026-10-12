@@ -1,0 +1,43 @@
+# Supabase Auth settings for email + password login.
+# The free plan cannot change the email templates, so the app does not use emailed codes:
+# accounts are confirmed on sign-up (no email is sent). Once both of us have signed up,
+# set DISABLE_SIGNUP below to true and push, so nobody else can create an account.
+# Runs on demand and whenever this file changes.
+#
+# Repository secret needed: SUPABASE_ACCESS_TOKEN (scoped token: Project Settings read-write)
+name: Auth config
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/auth-config.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF || 'erfoqmoycgzdhijhhidq' }}
+      DISABLE_SIGNUP: 'false'
+    steps:
+      - name: Check secret
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then echo "::error::SUPABASE_ACCESS_TOKEN secret is missing"; exit 1; fi
+      - name: Apply auth settings
+        run: |
+          jq -n --argjson off "$DISABLE_SIGNUP" '{
+            external_email_enabled: true,
+            mailer_autoconfirm: true,
+            password_min_length: 8,
+            disable_signup: $off
+          }' > auth.json
+          code=$(curl -sS -o resp.json -w '%{http_code}' -X PATCH \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/config/auth" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H "Content-Type: application/json" \
+            --data @auth.json)
+          if [ "$code" != "200" ]; then echo "::error::Supabase API returned $code: $(head -c 300 resp.json)"; exit 1; fi
+          echo "::notice::Auth: autoconfirm=$(jq -r .mailer_autoconfirm resp.json) signup_disabled=$(jq -r .disable_signup resp.json) min_password=$(jq -r .password_min_length resp.json)"

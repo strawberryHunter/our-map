@@ -29,6 +29,7 @@ const STEPS = [
   { name: 'story', what: 'AI story prompt (memo, no guessed places) and reply parsing', ...test('verify/tests/story.test.ts') },
   { name: 'privacy', what: 'Every network call is listed; no analytics SDKs; no location/face logging', ...test('verify/tests/privacy.test.ts') },
   { name: 'course', what: 'Date course: taste from memories, prompt rules, parsing, no repeats', ...test('verify/tests/course.test.ts') },
+  { name: 'auth', what: 'Login form checks and Korean messages for auth errors', ...test('verify/tests/auth.test.ts') },
   { name: 'today', what: "오늘의 추억: N년 전 오늘, 주년, D+100, Korea time, Feb 29", ...test('verify/tests/today.test.ts') },
   { name: 'timeline', what: 'Movie plan: hook first, cuts on the beat, sane length, GPS-less stops', ...test('verify/tests/timeline.test.ts') },
   { name: 'camera', what: 'Movie camera: lands on places, zooms out between far ones, frames the whole route', ...test('verify/tests/camera.test.ts') },
