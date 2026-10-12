@@ -8,6 +8,10 @@
 name: Build Android
 
 on:
+  # Also builds when the app's public settings change (e.g. a new Supabase key).
+  push:
+    branches: [main]
+    paths: ['config/public.env']
   workflow_dispatch:
     inputs:
       profile:
@@ -46,4 +50,4 @@ jobs:
         # EAS_NO_VCS uploads the working folder (with .env), filtered by .easignore.
         env:
           EAS_NO_VCS: '1'
-        run: eas build --platform android --profile ${{ inputs.profile }} --non-interactive --no-wait
+        run: eas build --platform android --profile ${{ inputs.profile || 'preview' }} --non-interactive --no-wait
