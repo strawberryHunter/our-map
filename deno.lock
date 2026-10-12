@@ -31,6 +31,7 @@
         "npm:expo-media-library@~57.0.5",
         "npm:expo-router@~57.0.25",
         "npm:expo-status-bar@~57.0.1",
+        "npm:expo-updates@~57.0.25",
         "npm:expo@~57.0.27",
         "npm:jpeg-js@~0.4.4",
         "npm:playwright-core@^1.55.0",
