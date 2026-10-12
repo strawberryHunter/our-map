@@ -1,3 +1,4 @@
+# Last run trigger: 2026-10-12
 # Puts the 6-digit login code into Supabase's sign-up / login emails (the app logs in with the
 # code; the default emails only carry a link, which opens localhost on a phone).
 # Runs on demand and whenever this file changes.
