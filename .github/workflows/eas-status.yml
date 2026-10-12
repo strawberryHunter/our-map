@@ -16,10 +16,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
       - uses: expo/expo-github-action@v8
         with:
           eas-version: 24.12.1
           token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
       - name: Link Expo project
         run: eas init --non-interactive --force
       - name: Wait for the latest Android build and report it
