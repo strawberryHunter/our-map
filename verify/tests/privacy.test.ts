@@ -8,7 +8,7 @@ import { test } from 'node:test';
 
 const ROOT = process.cwd();
 const DIRS = ['app', 'src', 'supabase/functions'];
-const SINK = /fetch\(|\.upload\(|functions\.invoke\(|\.insert\(|\.update\(|\.upsert\(|\.rpc\(|signInWithOtp|verifyOtp|signInWithPassword|signUp\(|createSignedUrl|XMLHttpRequest|WebSocket\(|sendBeacon|https?:\/\/[a-zA-Z0-9.:_-]+(\/[a-zA-Z0-9._-]+)*/g;
+const SINK = /fetch\(|\.upload\(|functions\.invoke\(|\.insert\(|\.update\(|\.upsert\(|\.rpc\(|signInWithOtp|verifyOtp|signInWithPassword|signUp\(|checkForUpdateAsync|createSignedUrl|XMLHttpRequest|WebSocket\(|sendBeacon|https?:\/\/[a-zA-Z0-9.:_-]+(\/[a-zA-Z0-9._-]+)*/g;
 // SDKs that phone home with device data. None are allowed.
 const BANNED_IMPORTS = /from ['"](@sentry|sentry-|@bugsnag|bugsnag|firebase\/analytics|@react-native-firebase\/(analytics|crashlytics)|expo-analytics|amplitude|mixpanel|@segment|posthog|@datadog)/;
 

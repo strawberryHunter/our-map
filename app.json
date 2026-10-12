@@ -62,6 +62,19 @@
     "experiments": {
       "typedRoutes": false
     },
-    "owner": "mrmjs-team"
+    "owner": "mrmjs-team",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c03b3fb3-a8cc-4558-9d89-b350ae4202e4",
+      "checkAutomatically": "NEVER",
+      "fallbackToCacheTimeout": 0
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c03b3fb3-a8cc-4558-9d89-b350ae4202e4"
+      }
+    }
   }
 }

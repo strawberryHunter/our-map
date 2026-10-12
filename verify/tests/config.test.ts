@@ -42,3 +42,10 @@ test('bundle ids are set for both stores', () => {
   assert.match(cfg.ios.bundleIdentifier, /^[a-z0-9.]+$/);
   assert.equal(cfg.android.package, cfg.ios.bundleIdentifier);
 });
+
+test('OTA updates: on, tied to our Expo project, and only for builds with the same native code', () => {
+  assert.equal(cfg.updates?.url, `https://u.expo.dev/${cfg.extra?.eas?.projectId}`);
+  assert.ok(cfg.extra?.eas?.projectId, 'extra.eas.projectId');
+  // fingerprint: a JS update never lands on an APK whose native modules differ (would crash)
+  assert.deepEqual(cfg.runtimeVersion, { policy: 'fingerprint' });
+});

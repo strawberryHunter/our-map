@@ -1,10 +1,12 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { DataProvider } from '../src/lib/data';
+import { useAppUpdate } from '../src/lib/useAppUpdate';
 import { SyncProvider } from '../src/sync/useSync';
 import { colors } from '../src/ui/theme';
 
 export default function RootLayout() {
+  useAppUpdate();
   return (
     <DataProvider>
       <SyncProvider>

@@ -8,10 +8,11 @@
 name: Build Android
 
 on:
-  # Also builds when the app's public settings change (e.g. a new Supabase key).
+  # Also builds when native settings change (new Supabase key, app.json, native packages).
+  # Pure JS changes are shipped by the Publish update workflow instead (no reinstall).
   push:
     branches: [main]
-    paths: ['config/public.env']
+    paths: ['config/public.env', 'app.json', 'eas.json', 'package.json']
   workflow_dispatch:
     inputs:
       profile:

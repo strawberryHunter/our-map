@@ -180,6 +180,12 @@
       "sink": "https://unpkg.com/mp4-muxer",
       "sends": "Nothing personal (library download)",
       "to": "unpkg CDN"
+    },
+    {
+      "file": "src/lib/useAppUpdate.ts",
+      "sink": "checkForUpdateAsync",
+      "sends": "App runtime version, platform and update channel (no user data)",
+      "to": "Expo Updates (u.expo.dev), then downloads the new JS bundle"
     }
   ]
 }

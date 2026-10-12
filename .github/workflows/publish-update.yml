@@ -1,0 +1,42 @@
+# Ships JS changes to installed apps without a new APK (EAS Update, channel "preview").
+# The app checks at launch, downloads the update and restarts itself.
+# An update only reaches APKs with the same native code (runtimeVersion "fingerprint");
+# changes to native packages need a new build (Build Android).
+#
+# Repository secret: EXPO_TOKEN
+name: Publish update
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['app/**', 'src/**', 'assets/**']
+
+concurrency: publish-update
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check settings
+        run: |
+          if [ -z "${{ secrets.EXPO_TOKEN }}" ]; then echo "::error::Missing repository secret EXPO_TOKEN"; exit 1; fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.12.1
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci
+      - run: cp config/public.env .env
+      - name: Publish
+        run: |
+          msg=$(git log -1 --format=%s | head -c 100)
+          eas update --channel preview --platform android --message "$msg" --non-interactive --json > update.json
+          echo "::notice::Update published: $(jq -r '.[0].group // .[0].id' update.json) runtime $(jq -r '.[0].runtimeVersion' update.json) — $msg"
