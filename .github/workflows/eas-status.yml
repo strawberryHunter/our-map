@@ -20,6 +20,8 @@ jobs:
         with:
           eas-version: 24.12.1
           token: ${{ secrets.EXPO_TOKEN }}
+      - name: Link Expo project
+        run: eas init --non-interactive --force
       - name: Wait for the latest Android build and report it
         run: |
           for i in $(seq 1 60); do
