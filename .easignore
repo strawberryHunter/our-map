@@ -1,0 +1,12 @@
+# What EAS Build uploads (used instead of .gitignore because builds include the generated .env).
+node_modules/
+.expo/
+dist/
+web-build/
+ios/
+android/
+verify/
+.github/
+supabase/
+*.log
+.DS_Store

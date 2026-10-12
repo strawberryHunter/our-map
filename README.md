@@ -50,7 +50,17 @@ npm run verify -- sync db                # 이름이 맞는 단계만
 
 실패하면 어떤 테스트가 어느 줄에서 무엇을 기대했고 실제로 뭐가 나왔는지 출력하고, `verify/out/report.md`에 정리해요. 영상 테스트는 `verify/out/`에 장소별 프레임과 영상 파일도 남겨요. 데이터가 어디로 나가는지는 `verify/out/privacy.md`에 표로 정리돼요.
 
-## 처음 세팅
+## 처음 세팅 (터미널 없이, GitHub Actions)
+
+1. **Supabase** 프로젝트를 만들어요. 리전은 Seoul로 해요.
+   - Authentication → Emails → **Magic Link** 템플릿 본문에 `{{ .Token }}`을 넣어요. 앱은 6자리 코드로 로그인해요.
+2. GitHub 레포 → Settings → Secrets and variables → Actions에 아래 값을 넣어요.
+   - Secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`, `ANTHROPIC_API_KEY`, `EXPO_TOKEN`
+   - Variables: `SUPABASE_URL`, `SUPABASE_ANON_KEY`
+3. Actions 탭에서 **Deploy backend**를 실행해요. DB, 서버 함수, API 키가 한 번에 세팅돼요.
+4. Actions 탭에서 **Build Android**를 실행해요. 10~20분 뒤 expo.dev → Builds에서 APK를 받아요.
+
+## 처음 세팅 (터미널로 직접)
 
 ### 1. Supabase 만들기 (무료 플랜)
 
