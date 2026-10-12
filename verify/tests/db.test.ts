@@ -182,3 +182,10 @@ describe('database', () => {
     assert.deepEqual(r.rows.map(x => x.tablename), ['date_courses', 'memories', 'people', 'photos']);
   });
 });
+
+test('supabase/setup-all.sql (the copy-paste version) matches the migrations', () => {
+  const parts = fs.readdirSync(MIGRATIONS).filter(f => f.endsWith('.sql')).sort()
+    .map(f => `-- ===== ${f} =====\n` + fs.readFileSync(path.join(MIGRATIONS, f), 'utf8'));
+  const all = fs.readFileSync(path.join(process.cwd(), 'supabase/setup-all.sql'), 'utf8');
+  assert.ok(all.endsWith(parts.join('\n')), 'regenerate setup-all.sql from the migrations');
+});

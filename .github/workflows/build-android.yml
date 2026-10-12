@@ -16,6 +16,10 @@ on:
         type: choice
         options: [preview, development]
 
+# Least privilege: the job only reads the repo.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

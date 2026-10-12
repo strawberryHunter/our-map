@@ -1,3 +1,6 @@
+# OPTIONAL automation. The database can instead be set up once by pasting the SQL files into
+# Supabase's SQL editor; then this workflow skips itself until its secrets are added.
+#
 # Applies the database migrations, deploys the Edge Functions and sets the Claude API key
 # on Supabase. Runs on demand (Actions tab -> Run workflow) and whenever supabase/ changes.
 #
@@ -15,6 +18,10 @@ on:
 
 concurrency: deploy-backend
 
+# Least privilege: the job only reads the repo.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -29,17 +36,26 @@ jobs:
         run: |
           missing=""
           for s in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD PROJECT_REF; do [ -n "${!s}" ] || missing="$missing $s"; done
-          if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing"; exit 1; fi
+          if [ -n "$missing" ]; then
+            # Not set up for automatic deploys (database set up by hand in the SQL editor): skip quietly.
+            echo "::notice::Skipping deploy, secrets not set:$missing"
+            echo "skip=1" >> "$GITHUB_ENV"
+          fi
       - uses: supabase/setup-cli@v1
+        if: env.skip != '1'
         with:
           version: 2.120.0
       - name: Link project
+        if: env.skip != '1'
         run: supabase link --project-ref "$PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
       - name: Apply database migrations
+        if: env.skip != '1'
         run: supabase db push --include-all --password "$SUPABASE_DB_PASSWORD"
       - name: Deploy Edge Functions
+        if: env.skip != '1'
         run: supabase functions deploy summarize recommend --project-ref "$PROJECT_REF" --use-api
       - name: Set Claude API key (optional, needed for AI story and date course)
+        if: env.skip != '1'
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
