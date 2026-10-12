@@ -11,6 +11,7 @@ export class Asset {
     if (this.a.broken) throw new Error('asset unavailable');
     return { id: this.id, uri: `ph://${this.id}`, width: 4032, height: 3024, creationTime: this.a.time, mediaType: 'image' };
   }
+  async getCreationTime() { if (!this.a) throw new Error('asset not in gallery'); return this.a.time; }
   async getLocation() { return this.a?.lat == null ? null : { latitude: this.a.lat, longitude: this.a.lng! }; }
 }
 

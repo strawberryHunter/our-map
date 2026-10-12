@@ -7,9 +7,10 @@ import { bundleSync } from '../mocks/bundle';
 import type { FakeAsset } from '../mocks/env';
 
 let runSync: Awaited<ReturnType<typeof bundleSync>>['runSync'];
+let importPicked: Awaited<ReturnType<typeof bundleSync>>['importPicked'];
 let world: Awaited<ReturnType<typeof bundleSync>>['world'];
 let resetWorld: () => void;
-before(async () => ({ runSync, world, resetWorld } = await bundleSync()));
+before(async () => ({ runSync, importPicked, world, resetWorld } = await bundleSync()));
 
 const H = 3600e3;
 const ME = 'user-me', PARTNER = 'user-partner', COUPLE = 'couple-1';
@@ -27,7 +28,10 @@ const ago = (h: number) => now - h * H;
 const photo = (id: string, hoursAgo: number, at: { lat: number; lng: number } | null, faces: string[], extra: Partial<FakeAsset> = {}): FakeAsset =>
   ({ id, time: ago(hoursAgo), lat: at?.lat ?? null, lng: at?.lng ?? null, faces, ...extra });
 
-const sync = (userId: string) => runSync({ userId, coupleId: COUPLE, people });
+const sync = async (userId: string) => {
+  const r = await runSync({ userId, coupleId: COUPLE, people });
+  return { memories: r.memories, photos: r.photos };
+};
 const memories = () => world.tables.memories;
 const photosOf = (m: { id: string }) => world.tables.photos.filter(p => p.memory_id === m.id);
 
@@ -54,7 +58,9 @@ describe('sync', () => {
     assert.deepEqual([...m.people].sort(), ['p-me', 'p-you']);
     assert.ok(Math.abs(m.lat - SEONGSU.lat) < 1e-6);
     assert.equal(world.summarizeCalls.length, 1);
-    assert.deepEqual([...world.summarizeCalls[0].body.people].sort(), ['MJ', 'NY']);
+    assert.deepEqual(world.summarizeCalls[0].body, { memoryId: m.id }, 'phone sends only the id; server reads photos + memo');
+    assert.equal(m.place_source, 'gps');
+    assert.equal(m.origin, 'auto');
   });
 
   test('cover photo is one with both of us when there is one', async () => {
@@ -72,7 +78,7 @@ describe('sync', () => {
     world.gallery = [photo('a1', 50, SEONGSU, ['p-me']), photo('a2', 49, SEONGSU, ['p-you'])];
     await sync(ME);
     const r = await sync(ME);
-    assert.deepEqual(r, { memories: 0, photos: 0 });
+    assert.equal(r.photos, 0);
     assert.equal(world.tables.photos.length, 2);
   });
 
@@ -142,11 +148,86 @@ describe('sync', () => {
 
   test('if only the AI summary fails, it is retried on a later run', async () => {
     world.gallery = [photo('a1', 50, SEONGSU, ['p-me']), photo('a2', 49.5, SEONGSU, ['p-you'])];
+    world.storyFails = true; // Claude API down: memory and photos saved, no story
     await sync(ME);
-    // Pretend the Claude API was down on that run: memory and photos saved, no summary.
-    for (const m of memories()) Object.assign(m, { summary: null, title: null });
+    assert.ok(memories().every(m => !m.summary));
+    world.storyFails = false;
     await sync(ME);
     assert.ok(memories().every(m => m.summary), 'memory should get a summary on the next run');
+  });
+
+  // ----- photos we picked ourselves -----
+  const pick = (id: string, hoursAgo: number, at: { lat: number; lng: number } | null, extra: Record<string, unknown> = {}) => {
+    const t = new Date(ago(hoursAgo));
+    const pad = (n: number) => String(n).padStart(2, '0');
+    // EXIF local time in KST with offset, like an iPhone photo.
+    const k = new Date(t.getTime() + 9 * H);
+    const dt = `${k.getUTCFullYear()}:${pad(k.getUTCMonth() + 1)}:${pad(k.getUTCDate())} ${pad(k.getUTCHours())}:${pad(k.getUTCMinutes())}:${pad(k.getUTCSeconds())}`;
+    return {
+      assetId: null, uri: `file:///picked/${id}.jpg`, width: 3000, height: 4000, fileName: `${id}.jpg`,
+      exif: { DateTimeOriginal: dt, OffsetTimeOriginal: '+09:00', ...(at ? { GPSLatitude: at.lat, GPSLatitudeRef: 'N', GPSLongitude: at.lng, GPSLongitudeRef: 'E' } : {}) },
+      ...extra,
+    };
+  };
+  const doImport = (photos: any[]) => importPicked({ userId: ME, coupleId: COUPLE, people }, photos);
+
+  test('picked: every picked photo is kept, even with no face in it', async () => {
+    world.gallery = [];
+    const r = await doImport([pick('k1', 80, SEONGSU), pick('k2', 79.5, SEONGSU), pick('k3', 30, JAMSIL)]);
+    assert.equal(r.photos, 3);
+    assert.equal(r.memories, 2, 'two dates/places -> two memories');
+    assert.ok(memories().every(m => m.origin === 'picked'));
+  });
+
+  test('picked: no GPS -> place is NOT decided automatically', async () => {
+    const r = await doImport([pick('n1', 80, null), pick('n2', 79.8, null)]);
+    assert.equal(r.memories, 1);
+    const m = memories()[0];
+    assert.equal(m.lat, null);
+    assert.equal(m.place_source, null);
+    assert.equal(m.place, null, 'story writer must not invent a place');
+  });
+
+  test('picked: photos without any date are left out and counted', async () => {
+    const r = await doImport([pick('d1', 80, SEONGSU), { ...pick('d2', 80, SEONGSU), exif: {} }]);
+    assert.equal(r.photos, 1);
+    assert.equal(r.skippedNoDate, 1);
+  });
+
+  test('picked: picker copy lost GPS, gallery still has it -> GPS used', async () => {
+    world.gallery = [photo('g1', 80, SEONGSU, [])];
+    const r = await doImport([{ ...pick('g1', 80, null), assetId: 'g1' }]);
+    assert.equal(r.memories, 1);
+    assert.ok(Math.abs(memories()[0].lat - SEONGSU.lat) < 1e-6);
+  });
+
+  test('picked: picking the same photos again adds nothing', async () => {
+    const photos = [pick('s1', 80, SEONGSU), pick('s2', 79.5, SEONGSU)];
+    await doImport(photos);
+    const r = await doImport(photos);
+    assert.equal(r.photos, 0);
+    assert.equal(world.tables.photos.length, 2);
+  });
+
+  test('a place we set by hand is never overwritten by later GPS photos', async () => {
+    await doImport([pick('m1', 80, null)]);
+    const m = memories()[0];
+    Object.assign(m, { lat: 37.548, lng: 127.06, place: '서울숲 피크닉', place_source: 'manual' });
+    world.gallery = [photo('m2', 79.9, SEONGSU, ['p-me'])];
+    await sync(ME);
+    assert.equal(memories().length, 1);
+    assert.equal(memories()[0].place, '서울숲 피크닉');
+    assert.equal(memories()[0].lat, 37.548);
+  });
+
+  test('a GPS-less memory gets its location when a GPS photo of that outing arrives', async () => {
+    await doImport([pick('x1', 80, null)]);
+    world.gallery = [photo('x2', 79.8, SEONGSU, ['p-you'])];
+    await sync(ME);
+    const m = memories()[0];
+    assert.equal(memories().length, 1);
+    assert.equal(m.place_source, 'gps');
+    assert.ok(world.summarizeCalls.length >= 2, 'story rewritten now that the place is known');
   });
 
   test('no photo permission gives a clear error, nothing uploaded', async () => {

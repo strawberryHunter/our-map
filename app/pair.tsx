@@ -34,8 +34,8 @@ export default function Pair() {
       <TextInput style={input} placeholder="내 이름 (예: MJ)" value={name} onChangeText={setName} placeholderTextColor={colors.sub} />
       <Card>
         <Text style={font.h2}>처음이라면</Text>
-        <Text style={font.small}>새 지도를 만들고, 설정 화면의 초대 코드를 상대에게 보내주세요.</Text>
-        <Button title="새 지도 만들기" onPress={create} busy={busy === 'create'} disabled={!name.trim()} />
+        <Text style={font.small}>우리 공간을 만들고, 설정 화면의 초대 코드를 상대에게 보내주세요.</Text>
+        <Button title="우리 공간 만들기" onPress={create} busy={busy === 'create'} disabled={!name.trim()} />
       </Card>
       <Card>
         <Text style={font.h2}>코드를 받았다면</Text>

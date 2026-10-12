@@ -6,6 +6,7 @@ import { supabase } from '../../src/lib/supabase';
 import type { Memory } from '../../src/lib/types';
 import { useSync } from '../../src/sync/useSync';
 import { StoredPhoto, SyncBanner, formatDay } from '../../src/ui/kit';
+import { TodayCard } from '../../src/ui/TodayCard';
 import { colors, font, personColors } from '../../src/ui/theme';
 
 export default function Timeline() {
@@ -39,6 +40,7 @@ export default function Timeline() {
         contentContainerStyle={{ padding: 16, gap: 12 }}
         refreshControl={<RefreshControl refreshing={running} onRefresh={sync} />}
         stickySectionHeadersEnabled={false}
+        ListHeaderComponent={<View style={{ marginHorizontal: -16, marginBottom: 4 }}><TodayCard /></View>}
         renderSectionHeader={({ section }) => <Text style={[font.small, s.month]}>{section.title}</Text>}
         ListEmptyComponent={
           <View style={{ paddingTop: 80, gap: 8 }}>

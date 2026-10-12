@@ -30,8 +30,8 @@ export default function Login() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: colors.paper }}>
       <View style={{ flex: 1, justifyContent: 'center', padding: 24, gap: 14 }}>
-        <Text style={[font.title, { fontSize: 30 }]}>우리 지도</Text>
-        <Text style={font.body}>같이 간 곳, 같이 한 일을 사진으로 모아두는 둘만의 지도예요.</Text>
+        <Text style={[font.title, { fontSize: 34, letterSpacing: 2 }]}>OURS</Text>
+        <Text style={font.body}>둘이 함께한 날을 사진으로 찾아 모으고, 이야기와 영화로 남기는 둘만의 앱이에요.</Text>
         <TextInput
           style={input} placeholder="이메일" autoCapitalize="none" keyboardType="email-address"
           value={email} onChangeText={setEmail} editable={!sent} placeholderTextColor={colors.sub}

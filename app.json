@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "우리 지도",
+    "name": "OURS",
     "slug": "our-map",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -41,7 +41,7 @@
         "expo-media-library",
         {
           "photosPermission": "둘이 함께 나온 사진을 찾아 추억으로 정리하려고 사진에 접근해요.",
-          "savePhotosPermission": "만든 지도 영상을 갤러리에 저장해요.",
+          "savePhotosPermission": "만든 추억 영화를 갤러리에 저장해요.",
           "isAccessMediaLocationEnabled": true,
           "granularPermissions": [
             "photo"
@@ -51,14 +51,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "얼굴을 등록할 사진을 고를 때 사진에 접근해요.",
+          "photosPermission": "추억으로 만들 사진과 얼굴 등록용 사진을 고를 때 사진에 접근해요.",
           "cameraPermission": false,
           "microphonePermission": false
         }
       ],
       "expo-build-properties"
     ],
-    "scheme": "ourmap",
+    "scheme": "ours",
     "experiments": {
       "typedRoutes": false
     }

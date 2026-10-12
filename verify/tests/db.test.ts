@@ -72,7 +72,7 @@ describe('database', () => {
 
   test('migration runs cleanly on a fresh database', async () => {
     const t = await db.query<{ n: string }>(`select count(*)::text n from pg_tables where schemaname='public'`);
-    assert.equal(t.rows[0].n, '5');
+    assert.equal(t.rows[0].n, '6');
   });
 
   test('create_couple returns a 6-char invite code', async () => {
@@ -164,8 +164,21 @@ describe('database', () => {
     assert.equal(rows.length, 0);
   });
 
+  test('date courses are private to the couple', async () => {
+    await as(A, `insert into public.date_courses (couple_id, course, created_by) values ($1, '{"title":"t","stops":[]}', $2)`, [coupleAB.id, A]);
+    assert.equal((await as(B, `select id from public.date_courses`)).length, 1);
+    assert.equal((await as(C, `select id from public.date_courses`)).length, 0);
+    await rejects(as(C, `insert into public.date_courses (couple_id, course) values ($1, '{}')`, [coupleAB.id]), /row-level security/);
+  });
+
+  test('place_source only accepts gps or manual', async () => {
+    await rejects(as(A, `update public.memories set place_source = 'ai'`), /check constraint/);
+    const ok = await as(A, `update public.memories set place_source = 'manual', memo = '처음 간 곳' returning id`);
+    assert.equal(ok.length, 1);
+  });
+
   test('tables are in the realtime publication', async () => {
     const r = await db.query<{ tablename: string }>(`select tablename from pg_publication_tables where pubname = 'supabase_realtime' order by 1`);
-    assert.deepEqual(r.rows.map(x => x.tablename), ['memories', 'people', 'photos']);
+    assert.deepEqual(r.rows.map(x => x.tablename), ['date_courses', 'memories', 'people', 'photos']);
   });
 });

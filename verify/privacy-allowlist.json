@@ -1,25 +1,185 @@
 {
   "_about": "Every place the app sends data off the phone. verify/tests/privacy.test.ts fails when code adds one that is not listed here. When you add a line, say what data goes where.",
   "entries": [
-    { "file": "src/sync/sync.ts", "sink": ".upload(", "sends": "Photo, downscaled to 1600px JPEG", "to": "Supabase Storage (private bucket, our couple only)" },
-    { "file": "src/sync/sync.ts", "sink": ".insert(", "sends": "Photo metadata (time, GPS, who is in it) and memory rows", "to": "Supabase DB (RLS: our couple only)" },
-    { "file": "src/sync/sync.ts", "sink": ".update(", "sends": "Memory time range, place, people, cover", "to": "Supabase DB" },
-    { "file": "src/sync/sync.ts", "sink": "functions.invoke(", "sends": "Up to 4 photos (768px), GPS, time, our names", "to": "Supabase Edge Function -> Claude API" },
-    { "file": "supabase/functions/summarize/index.ts", "sink": "https://nominatim.openstreetmap.org/reverse", "sends": "GPS of the memory", "to": "OpenStreetMap Nominatim (place name lookup)" },
-    { "file": "supabase/functions/summarize/index.ts", "sink": "https://api.anthropic.com/v1/messages", "sends": "Up to 4 photos (768px), place, time, our names", "to": "Claude API" },
-    { "file": "supabase/functions/summarize/index.ts", "sink": "fetch(", "sends": "(the two calls above)", "to": "-" },
-    { "file": "supabase/functions/summarize/index.ts", "sink": ".update(", "sends": "AI title/place/summary", "to": "Supabase DB" },
-    { "file": "app/(tabs)/settings.tsx", "sink": ".insert(", "sends": "Face embeddings (192 numbers per photo, not images)", "to": "Supabase DB" },
-    { "file": "app/(tabs)/settings.tsx", "sink": ".update(", "sends": "Face embeddings", "to": "Supabase DB" },
-    { "file": "app/memory/[id].tsx", "sink": ".update(", "sends": "Edited title/summary", "to": "Supabase DB" },
-    { "file": "app/pair.tsx", "sink": ".rpc(", "sends": "Display name, invite code", "to": "Supabase DB" },
-    { "file": "app/login.tsx", "sink": "signInWithOtp", "sends": "Email address", "to": "Supabase Auth" },
-    { "file": "app/login.tsx", "sink": "verifyOtp", "sends": "Email + one-time code", "to": "Supabase Auth" },
-    { "file": "src/lib/data.tsx", "sink": "createSignedUrl", "sends": "Photo path (to get a 1h viewing link)", "to": "Supabase Storage" },
-    { "file": "app/(tabs)/map.tsx", "sink": "https://tiles.openfreemap.org/styles/positron", "sends": "Map area being viewed (tile requests)", "to": "OpenFreeMap" },
-    { "file": "src/video/storyHtml.ts", "sink": "https://tiles.openfreemap.org/styles/positron", "sends": "Map area of each memory (tile requests)", "to": "OpenFreeMap" },
-    { "file": "src/video/storyHtml.ts", "sink": "https://unpkg.com/maplibre-gl", "sends": "Nothing personal (library download)", "to": "unpkg CDN" },
-    { "file": "app/video.tsx", "sink": "https://localhost", "sends": "Nothing (WebView base URL)", "to": "-" },
-    { "file": "src/lib/supabase.ts", "sink": "http://localhost", "sends": "Nothing (placeholder when not configured)", "to": "-" }
+    {
+      "file": "src/sync/sync.ts",
+      "sink": ".upload(",
+      "sends": "Photo, downscaled to 1600px JPEG",
+      "to": "Supabase Storage (private bucket, our couple only)"
+    },
+    {
+      "file": "src/sync/sync.ts",
+      "sink": ".insert(",
+      "sends": "Photo metadata (time, GPS, who is in it) and memory rows",
+      "to": "Supabase DB (RLS: our couple only)"
+    },
+    {
+      "file": "src/sync/sync.ts",
+      "sink": ".update(",
+      "sends": "Memory time range, place, people, cover",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "src/sync/sync.ts",
+      "sink": "functions.invoke(",
+      "sends": "Memory id only (server reads the stored photos and memo)",
+      "to": "Supabase Edge Function summarize"
+    },
+    {
+      "file": "supabase/functions/summarize/index.ts",
+      "sink": "https://api.anthropic.com/v1/messages",
+      "sends": "Up to 4 stored photos of the memory, place name, time, our names, our memo",
+      "to": "Claude API"
+    },
+    {
+      "file": "supabase/functions/summarize/index.ts",
+      "sink": "fetch(",
+      "sends": "(the two calls above)",
+      "to": "-"
+    },
+    {
+      "file": "supabase/functions/summarize/index.ts",
+      "sink": ".update(",
+      "sends": "AI title/place/summary",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/(tabs)/settings.tsx",
+      "sink": ".insert(",
+      "sends": "Face embeddings (192 numbers per photo, not images)",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/(tabs)/settings.tsx",
+      "sink": ".update(",
+      "sends": "Face embeddings",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/memory/[id].tsx",
+      "sink": ".update(",
+      "sends": "Our memo, edited title/story",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/pair.tsx",
+      "sink": ".rpc(",
+      "sends": "Display name, invite code",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/login.tsx",
+      "sink": "signInWithOtp",
+      "sends": "Email address",
+      "to": "Supabase Auth"
+    },
+    {
+      "file": "app/login.tsx",
+      "sink": "verifyOtp",
+      "sends": "Email + one-time code",
+      "to": "Supabase Auth"
+    },
+    {
+      "file": "src/lib/data.tsx",
+      "sink": "createSignedUrl",
+      "sends": "Photo path (to get a 1h viewing link)",
+      "to": "Supabase Storage"
+    },
+    {
+      "file": "src/video/storyHtml.ts",
+      "sink": "https://tiles.openfreemap.org/styles/positron",
+      "sends": "Map area of each memory (tile requests)",
+      "to": "OpenFreeMap"
+    },
+    {
+      "file": "src/video/storyHtml.ts",
+      "sink": "https://unpkg.com/maplibre-gl",
+      "sends": "Nothing personal (library download)",
+      "to": "unpkg CDN"
+    },
+    {
+      "file": "app/video.tsx",
+      "sink": "https://localhost",
+      "sends": "Nothing (WebView base URL)",
+      "to": "-"
+    },
+    {
+      "file": "src/lib/supabase.ts",
+      "sink": "http://localhost",
+      "sends": "Nothing (placeholder when not configured)",
+      "to": "-"
+    },
+    {
+      "file": "supabase/functions/_shared/geo.ts",
+      "sink": "https://nominatim.openstreetmap.org/reverse",
+      "sends": "GPS of a memory (to name the place)",
+      "to": "OpenStreetMap Nominatim"
+    },
+    {
+      "file": "supabase/functions/_shared/geo.ts",
+      "sink": "https://nominatim.openstreetmap.org/search",
+      "sends": "Address of a recommended place (no personal data)",
+      "to": "OpenStreetMap Nominatim"
+    },
+    {
+      "file": "supabase/functions/_shared/geo.ts",
+      "sink": "fetch(",
+      "sends": "(the two lookups above)",
+      "to": "-"
+    },
+    {
+      "file": "supabase/functions/recommend/index.ts",
+      "sink": "https://api.anthropic.com/v1/messages",
+      "sends": "Titles, place names, memos and story text of our memories (no photos), the date request",
+      "to": "Claude API (with web search)"
+    },
+    {
+      "file": "supabase/functions/recommend/index.ts",
+      "sink": "fetch(",
+      "sends": "(the call above)",
+      "to": "-"
+    },
+    {
+      "file": "supabase/functions/recommend/index.ts",
+      "sink": ".insert(",
+      "sends": "Suggested course",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/(tabs)/dates.tsx",
+      "sink": "functions.invoke(",
+      "sends": "Date request (area, mood, budget, when, note)",
+      "to": "Supabase Edge Function recommend"
+    },
+    {
+      "file": "app/course/[id].tsx",
+      "sink": ".update(",
+      "sends": "Saved/unsaved flag",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "app/memory/place.tsx",
+      "sink": ".update(",
+      "sends": "Place we picked on the map (coordinates + name)",
+      "to": "Supabase DB"
+    },
+    {
+      "file": "src/ui/map.ts",
+      "sink": "https://tiles.openfreemap.org/styles/positron",
+      "sends": "Map area being viewed (tile requests)",
+      "to": "OpenFreeMap"
+    },
+    {
+      "file": "src/video/storyHtml.ts",
+      "sink": "https://fonts.googleapis.com/css2",
+      "sends": "Nothing personal (font download)",
+      "to": "Google Fonts"
+    },
+    {
+      "file": "src/video/storyHtml.ts",
+      "sink": "https://unpkg.com/mp4-muxer",
+      "sends": "Nothing personal (library download)",
+      "to": "unpkg CDN"
+    }
   ]
 }

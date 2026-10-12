@@ -1,7 +1,7 @@
-# Project: our-map (우리 지도)
+# Project: OURS (repo: our-map)
 
-Couple memory map app. Expo (React Native), iOS + Android, one codebase. Two users per couple.
-Backend: Supabase (Postgres + Storage + Realtime + one Edge Function). See README.md for setup.
+Couple memory app: auto-discovered memories, AI stories, memory movies, today's memories, AI date courses. Expo (React Native), iOS + Android, one codebase. Two users per couple.
+Backend: Supabase (Postgres + Storage + Realtime + Edge Functions `summarize`, `recommend`). See README.md for setup.
 
 ## Workflow
 - Before coding: state the plan, the files you will touch, and what you will NOT change.
@@ -14,8 +14,11 @@ Backend: Supabase (Postgres + Storage + Realtime + one Edge Function). See READM
 ## Verify (verify/)
 - `npm run verify` runs everything; `-- --quick` skips slow steps; `-- sync db` runs matching steps.
 - Report: `verify/out/report.md`. Video frames and the recorded video land in `verify/out/` too.
-- New logic goes in a pure module (no React Native imports) so it can be tested in Node, like
-  `src/sync/cluster.ts`, `src/face/core.ts`, `supabase/functions/summarize/parse.ts`.
+- New logic goes in a pure module (no React Native / Deno imports) so it can be tested in Node, like
+  `src/sync/cluster.ts`, `src/sync/exif.ts`, `src/lib/today.ts`, `src/video/timeline.ts`,
+  `src/video/camera.ts`, `src/face/core.ts`, `supabase/functions/_shared/story.ts`, `course.ts`.
+- The movie page (`src/video/storyHtml.ts`) only plays a precomputed plan; put movie logic in
+  timeline.ts / camera.ts where it is tested.
 - Native modules are swapped for fakes in `verify/mocks/` when testing `src/sync/sync.ts`.
   If sync.ts imports a new native package, add a fake there (the bundler refuses unmocked imports).
 - When fixing a bug: first add a test that fails, then fix, then show it passing.
@@ -31,8 +34,11 @@ Backend: Supabase (Postgres + Storage + Realtime + one Edge Function). See READM
 
 ## Privacy
 - Current design (decided): photos are uploaded downscaled (1600px) so the partner's phone can see
-  them; up to 4 photos (768px) per memory go to the Claude API for the summary; face embeddings
+  them; up to 4 stored photos + our memo per memory go to the Claude API for the story; date
+  recommendations send titles/places/memos (no photos) to Claude with web search; face embeddings
   (numbers, not images) are stored in the couple's DB rows. Everything is private to the couple by RLS.
+- Place rule: only photo GPS or one of us may set a memory's place (`place_source` gps/manual).
+  The AI never decides a place; a hand-set place is never overwritten.
 - Every network call must be listed in `verify/privacy-allowlist.json` with what it sends.
   The privacy test fails on any unlisted one. Mention new entries in the PR description.
 - No analytics or crash SDKs. No logging of locations, embeddings or image data.

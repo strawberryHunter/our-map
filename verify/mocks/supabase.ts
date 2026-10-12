@@ -26,7 +26,7 @@ class Builder {
   private run(): { data: any; error: any } {
     const rows = (world.tables[this.table] ??= []);
     if (this.mode === 'insert') {
-      const row = { id: uuid(), people: [], summary: null, title: null, place: null, cover_photo: null, ...this.payload };
+      const row = { id: uuid(), people: [], summary: null, title: null, place: null, cover_photo: null, memo: null, place_source: null, origin: 'auto', ...this.payload };
       if (this.table === 'photos' && rows.some(r => r.uploaded_by === row.uploaded_by && r.source_asset === row.source_asset)) {
         return { data: null, error: { message: 'duplicate key value violates unique constraint' } };
       }
@@ -57,8 +57,9 @@ export const supabase = {
     invoke: async (name: string, { body }: { body: any }) => {
       world.summarizeCalls.push({ name, body });
       const m = world.tables.memories.find(r => r.id === body.memoryId);
-      if (m) Object.assign(m, { title: 'T', summary: 'S', place: 'P' });
-      return { error: null };
+      if (world.storyFails) return { data: null, error: new Error('Claude API down') };
+      if (m) Object.assign(m, { title: 'T', summary: 'S', place: m.place_source ? 'P' : null });
+      return { data: m ? { title: m.title, place: m.place, summary: m.summary } : null, error: null };
     },
   },
 };

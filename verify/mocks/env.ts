@@ -17,6 +17,7 @@ export const world = {
   summarizeCalls: [] as any[],
   failUploadAfter: Infinity, // simulate network failure after N uploads
   uploads: 0,
+  storyFails: false,
 };
 
 export function resetWorld() {
@@ -28,4 +29,5 @@ export function resetWorld() {
   world.summarizeCalls = [];
   world.failUploadAfter = Infinity;
   world.uploads = 0;
+  world.storyFails = false;
 }

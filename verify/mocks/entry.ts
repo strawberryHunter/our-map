@@ -1,2 +1,2 @@
-export { runSync } from '../../src/sync/sync';
+export { runSync, importPicked } from '../../src/sync/sync';
 export { world, resetWorld } from './env';

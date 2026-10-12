@@ -1,13 +1,15 @@
-// Runs the map-video page (src/video/storyHtml.ts) in headless Chromium the way the app's
-// WebView does: fake ReactNativeWebView bridge, real maplibre + map tiles + MediaRecorder.
-// Checks that a playable video comes back through the bridge and saves a frame to look at.
+// Renders the memory movie (src/video/storyHtml.ts) in headless Chromium the way the app's
+// WebView does: fake ReactNativeWebView bridge, real maplibre + map tiles + WebCodecs encoder.
+// Checks the file that comes back through the bridge and saves key frames to look at.
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { chromium } from 'playwright-core';
+import { FPS, cameraFrames } from '../../src/video/camera';
 import { storyHtml } from '../../src/video/storyHtml';
+import { planMovie, type MovieStop } from '../../src/video/timeline';
 
 const OUT = path.join(process.cwd(), 'verify/out');
 const FIX = path.join(process.cwd(), 'verify/fixtures/faces');
@@ -26,27 +28,26 @@ function findChromium() {
 }
 const exe = findChromium();
 
-test('map video: records, streams back through the bridge, and is playable', { skip: exe ? false : 'no headless Chromium (npx playwright-core install chromium-headless-shell)', timeout: 180_000 }, async () => {
+const stops: MovieStop[] = [
+  { lat: 37.5445, lng: 127.056, date: '2026년 8월 15일 (토)', stamp: "'26 08 15", title: '성수동 빵지순례', place: '성수동 카페거리', photos: [dataUrl('group.jpg'), dataUrl('obama.jpg')] },
+  { lat: null, lng: null, date: '2026년 8월 30일 (일)', stamp: "'26 08 30", title: '비 오는 날 영화', place: '', photos: [dataUrl('obama2.jpg')] }, // no GPS
+  { lat: 37.5113, lng: 127.098, date: '2026년 9월 6일 (토)', stamp: "'26 09 06", title: '롯데월드 야간개장', place: '잠실 롯데월드', photos: [dataUrl('biden.jpg')] },
+  { lat: 33.4596, lng: 126.3106, date: '2026년 10월 3일 (토)', stamp: "'26 10 03", title: '협재 바다', place: '제주 협재해변', photos: [] }, // photos failed to load
+];
+
+test('memory movie: renders frame by frame, comes back through the bridge, plays as planned', { skip: exe ? false : 'no headless Chromium (npx playwright-core install chromium-headless-shell)', timeout: 600_000 }, async () => {
   fs.mkdirSync(OUT, { recursive: true });
-  const html = storyHtml({
-    title: '우리 지도',
-    subtitle: '2026.08 – 2026.10',
-    stops: [
-      { lat: 37.5445, lng: 127.056, date: '2026년 8월 15일 (토)', title: '성수동 카페 투어', place: '성수동 카페거리', summary: '빵이 맛있는 집을 세 군데 돌았다. 마지막 집 크루아상이 제일 나았다.', photos: [dataUrl('group.jpg'), dataUrl('obama.jpg')] },
-      { lat: 37.5113, lng: 127.098, date: '2026년 9월 6일 (토)', title: '롯데월드 야간개장', place: '잠실 롯데월드', summary: '줄이 짧아서 자이로드롭을 두 번 탔다.', photos: [dataUrl('biden.jpg')] },
-      { lat: 33.4596, lng: 126.3106, date: '2026년 10월 3일 (토)', title: '협재 바다', place: '제주 협재해변', summary: '바람이 세게 불었는데 물 색이 정말 예뻤다. 해 질 때까지 앉아 있었다.', photos: [] },
-    ],
-  });
+  const plan = planMovie(stops);
+  const frames = cameraFrames(stops, plan.shots, plan.total);
+  const html = storyHtml({ range: '2026.08 – 2026.10', hero: dataUrl('group.jpg'), stats: { places: 4, days: 4, photos: 23, km: 452 }, stops, ...plan, frames });
 
   const proxy = process.env.HTTPS_PROXY ?? process.env.https_proxy;
   const browser = await chromium.launch({ executablePath: exe!, proxy: proxy ? { server: proxy } : undefined, args: ['--ignore-certificate-errors', '--use-gl=swiftshader', '--enable-unsafe-swiftshader'] });
   try {
-    const page = await browser.newPage({ viewport: { width: 390, height: 488 }, ignoreHTTPSErrors: true });
+    const page = await browser.newPage({ viewport: { width: 360, height: 640 }, ignoreHTTPSErrors: true });
     const msgs: any[] = [];
     const errors: string[] = [];
     let b64 = '';
-    let frameShot: Buffer | null = null;
-    let shots = 0;
     page.on('pageerror', e => errors.push(String(e)));
     await page.exposeFunction('__bridge', (s: string) => {
       const m = JSON.parse(s);
@@ -54,39 +55,48 @@ test('map video: records, streams back through the bridge, and is playable', { s
     });
     // A string, not a function: tsx would inject helpers that do not exist in the page.
     await page.addInitScript('window.ReactNativeWebView = { postMessage: function (s) { window.__bridge(s); } };');
-    // Same origin the app gives the WebView (source.baseUrl).
+    // Same origin the app gives the WebView (source.baseUrl); WebCodecs needs a secure origin.
     await page.route('https://localhost/', r => r.fulfill({ contentType: 'text/html', body: html }));
     await page.goto('https://localhost/');
 
-    const deadline = Date.now() + 170_000;
-    while (!msgs.some(m => m.type === 'end' || m.type === 'error') && Date.now() < deadline) {
-      const stop = msgs.filter(m => m.type === 'status' && /^\d+ \//.test(String(m.text))).length;
-      if (stop > shots) {
-        shots = stop;
-        await page.waitForTimeout(4200); // fly in + card on screen
-        frameShot = await page.locator('#out').screenshot();
-        fs.writeFileSync(path.join(OUT, `video-stop${stop}.png`), frameShot);
-      }
-      await page.waitForTimeout(250);
-    }
+    const deadline = Date.now() + 580_000;
+    while (!msgs.some(m => m.type === 'end' || m.type === 'error') && Date.now() < deadline) await page.waitForTimeout(250);
+
     const err = msgs.find(m => m.type === 'error');
     assert.equal(err, undefined, `page reported: ${err?.text}`);
     assert.deepEqual(errors, [], 'no uncaught page errors');
     const begin = msgs.find(m => m.type === 'begin');
-    assert.ok(begin, `recording never finished; statuses: ${msgs.filter(m => m.type === 'status').map(m => m.text).join(' | ')}`);
+    assert.ok(begin, `never finished; last status: ${msgs.filter(m => m.type === 'status').map(m => m.text).at(-1)}`);
+    assert.match(begin.mode, /^offline-/, 'frame-by-frame encoder used (no dropped frames)');
+    assert.deepEqual(msgs.filter(m => m.type === 'shot').map(m => m.index), plan.shots.map((_, i) => i), 'every planned shot played, in order');
+    assert.ok(msgs.some(m => m.type === 'progress'), 'progress reported for the progress bar');
+
     const bytes = Buffer.from(b64, 'base64');
     assert.equal(bytes.length, begin.size, 'all chunks arrived, nothing lost in the bridge');
-    assert.ok(bytes.length > 50_000, `video is ${bytes.length} bytes`);
     const file = path.join(OUT, `video.${begin.ext}`);
     fs.writeFileSync(file, bytes);
 
     if (hasTool('ffprobe')) {
-      // MediaRecorder webm has no duration header; count decoded frames instead.
-      const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-count_frames', '-select_streams', 'v:0', '-show_entries', 'stream=width,height,nb_read_frames,r_frame_rate', '-of', 'json', file]).toString());
+      const probe = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-count_frames', '-select_streams', 'v:0', '-show_entries', 'stream=width,height,nb_read_frames,codec_name', '-of', 'json', file]).toString());
       const s = probe.streams[0];
-      assert.equal(`${s.width}x${s.height}`, '1080x1350', '4:5 portrait at 1080 wide');
-      assert.ok(Number(s.nb_read_frames) > 300, `only ${s.nb_read_frames} frames decoded`);
-      fs.writeFileSync(path.join(OUT, 'video-probe.json'), JSON.stringify(s, null, 2));
+      fs.writeFileSync(path.join(OUT, 'video-probe.json'), JSON.stringify({ ...s, mode: begin.mode }, null, 2));
+      assert.equal(`${s.width}x${s.height}`, '1080x1920', '9:16 for Reels/Shorts/Stories');
+      assert.equal(Number(s.nb_read_frames), frames.length, `every frame encoded (${FPS} fps, ${plan.total / 1000} s)`);
+
+      // Key frames to look at, cut from the actual video.
+      const at = (k: string, stop: number | null, into: number) => {
+        const sh = plan.shots.find(x => x.kind === k && (stop == null || ('stop' in x && x.stop === stop)))!;
+        return (sh.start + into) / 1000;
+      };
+      const shots: [string, number][] = [
+        ['hook', at('hook', null, 700)], ['fly-seoul', at('fly', 0, 800)], ['photo-1', at('photo', 0, 1200)],
+        ['photo-no-gps', at('photo', 1, 800)], ['fly-jeju-mid', at('fly', 3, 1300)], ['photo-missing', at('photo', 3, 800)],
+        ['end', plan.total / 1000 - 0.3],
+      ];
+      for (const [name, sec] of shots) {
+        execFileSync('ffmpeg', ['-v', 'error', '-y', '-ss', sec.toFixed(3), '-i', file, '-frames:v', '1', '-vf', 'scale=360:-1', path.join(OUT, `movie-${name}.png`)]);
+      }
+      execFileSync('ffmpeg', ['-v', 'error', '-y', ...shots.flatMap(([n]) => ['-i', path.join(OUT, `movie-${n}.png`)]), '-filter_complex', `hstack=${shots.length}`, path.join(OUT, 'movie-contact-sheet.png')]);
     }
   } finally {
     await browser.close();

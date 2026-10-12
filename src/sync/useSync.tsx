@@ -27,7 +27,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setRunning(true); setError(null);
     try {
       const r = await runSync({ userId: session.user.id, coupleId: couple.id, people, onProgress: setProgress });
-      setLastResult(r.memories ? `추억 ${r.memories}개, 사진 ${r.photos}장을 정리했어요` : '새로 정리할 사진이 없어요');
+      setLastResult(r.photos ? `추억 ${r.memories}개, 사진 ${r.photos}장을 정리했어요` : '새로 정리할 사진이 없어요');
       if (r.memories) await reload();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));

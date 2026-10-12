@@ -33,6 +33,7 @@
     "@electric-sql/pglite": "^0.3.7",
     "@types/node": "^22.20.5",
     "@types/react": "~19.2.2",
+    "deno": "^2.9.6",
     "esbuild": "^0.25.10",
     "playwright-core": "^1.55.0",
     "tsx": "^4.20.5",

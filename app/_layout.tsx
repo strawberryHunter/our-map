@@ -23,7 +23,10 @@ export default function RootLayout() {
           <Stack.Screen name="pair" options={{ title: '' }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="memory/[id]" options={{ title: '' }} />
-          <Stack.Screen name="video" options={{ title: '지도 영상', presentation: 'modal' }} />
+          <Stack.Screen name="memory/place" options={{ title: '장소 정하기' }} />
+          <Stack.Screen name="import" options={{ title: '사진 골라서 추억 만들기', presentation: 'modal' }} />
+          <Stack.Screen name="course/[id]" options={{ title: '데이트 코스' }} />
+          <Stack.Screen name="video" options={{ title: '추억 영화' }} />
         </Stack>
       </SyncProvider>
     </DataProvider>

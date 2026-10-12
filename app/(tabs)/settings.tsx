@@ -108,7 +108,7 @@ export default function Settings() {
         {members.length < 2 && couple && (
           <>
             <Text style={font.small}>상대가 앱에서 이 코드를 입력하면 연결돼요.</Text>
-            <Pressable onPress={() => Share.share({ message: `우리 지도 초대 코드: ${couple.invite_code}` })}>
+            <Pressable onPress={() => Share.share({ message: `OURS 초대 코드: ${couple.invite_code}` })}>
               <Text style={{ fontSize: 28, fontWeight: '800', letterSpacing: 4, color: colors.ink }} selectable>{couple.invite_code}</Text>
             </Pressable>
           </>

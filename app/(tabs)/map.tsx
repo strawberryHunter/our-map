@@ -6,11 +6,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useData } from '../../src/lib/data';
 import { supabase } from '../../src/lib/supabase';
 import { StoredPhoto, SyncBanner } from '../../src/ui/kit';
+import { TodayCard } from '../../src/ui/TodayCard';
+import { MAP_STYLE } from '../../src/ui/map';
 import { colors, font } from '../../src/ui/theme';
 import { useEffect, useState } from 'react';
 
-// Free OpenStreetMap vector tiles; labels follow local names, so Korea shows Korean.
-const STYLE = 'https://tiles.openfreemap.org/styles/positron';
 
 export default function MapScreen() {
   const { memories } = useData();
@@ -37,7 +37,7 @@ export default function MapScreen() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Map style={StyleSheet.absoluteFill} mapStyle={STYLE} logo={false} compass={false}>
+      <Map style={StyleSheet.absoluteFill} mapStyle={MAP_STYLE} logo={false} compass={false}>
         <Camera
           ref={camera}
           initialViewState={bounds ? { bounds, padding: { top: 120, bottom: 140, left: 40, right: 40 } } : { center: [126.978, 37.5665], zoom: 10 }}
@@ -58,14 +58,17 @@ export default function MapScreen() {
       </Map>
 
       <View style={[s.top, { paddingTop: insets.top + 8 }]}>
-        <Text style={font.title}>우리 지도</Text>
+        <Text style={font.title}>OURS</Text>
         <Text style={font.small}>{memories.length ? `추억 ${memories.length}개` : '사진을 정리하면 여기에 핀이 꽂혀요'}</Text>
       </View>
-      <View style={{ position: 'absolute', left: 0, right: 0, top: insets.top + 70 }}><SyncBanner /></View>
+      <View style={{ position: 'absolute', left: 0, right: 0, top: insets.top + 70, gap: 8 }}>
+        <SyncBanner />
+        <TodayCard />
+      </View>
 
-      {placed.length > 1 && (
+      {memories.length > 0 && (
         <Pressable style={[s.fab, { bottom: 24 }]} onPress={() => router.push('/video')}>
-          <Text style={s.fabText}>▶ 지도 영상 만들기</Text>
+          <Text style={s.fabText}>▶ 추억 영화 만들기</Text>
         </Pressable>
       )}
     </View>

@@ -14,6 +14,10 @@ export type Memory = {
   summary: string | null;
   people: string[];
   cover_photo: string | null;
+  memo: string | null;
+  place_source: 'gps' | 'manual' | null;
+  origin: 'auto' | 'picked';
+  created_by: string | null;
 };
 
 export type PhotoRow = {
@@ -26,4 +30,24 @@ export type PhotoRow = {
   width: number | null;
   height: number | null;
   people: string[];
+};
+
+export type CourseStop = {
+  name: string;
+  address: string | null;
+  lat: number | null;
+  lng: number | null;
+  time: string | null; // e.g. "14:00"
+  category: string | null; // cafe, food, walk, exhibition, ...
+  why: string;
+  url: string | null;
+};
+export type Course = { title: string; summary: string; stops: CourseStop[] };
+export type DateCourse = {
+  id: string;
+  couple_id: string;
+  request: { area?: string; mood?: string; budget?: string; when?: string; note?: string };
+  course: Course;
+  saved: boolean;
+  created_at: string;
 };
