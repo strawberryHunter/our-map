@@ -61,6 +61,7 @@
     "scheme": "ours",
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "owner": "mrmjs-team"
   }
 }
