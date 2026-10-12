@@ -1,0 +1,39 @@
+# Reports the latest Android build on Expo (status, error, download link) as annotations on this
+# run, so the status is visible from GitHub without logging in to expo.dev.
+name: EAS build status
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/eas-status.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  status:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: expo/expo-github-action@v8
+        with:
+          eas-version: 24.12.1
+          token: ${{ secrets.EXPO_TOKEN }}
+      - name: Wait for the latest Android build and report it
+        run: |
+          for i in $(seq 1 60); do
+            eas build:list --platform android --limit 1 --json --non-interactive > b.json || { echo "::error::eas build:list failed"; exit 1; }
+            status=$(jq -r '.[0].status' b.json)
+            echo "status: $status"
+            case "$status" in FINISHED|ERRORED|CANCELED) break;; esac
+            sleep 30
+          done
+          id=$(jq -r '.[0].id' b.json)
+          echo "::notice::Build $id status=$status profile=$(jq -r '.[0].buildProfile' b.json)"
+          if [ "$status" = "FINISHED" ]; then
+            echo "::notice::APK: $(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl' b.json)"
+          else
+            echo "::error::$(jq -r '.[0].error.errorCode // "no code"' b.json): $(jq -r '.[0].error.message // "no message"' b.json | tr '\n' ' ' | cut -c1-900)"
+            exit 1
+          fi

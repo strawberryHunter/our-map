@@ -1,6 +1,6 @@
 # Builds an installable Android APK on Expo's servers (EAS Build).
-# Run it from the Actions tab -> Build Android -> Run workflow. When the build finishes
-# (10-20 min, free tier may queue), the APK download link is on expo.dev under Builds.
+# Run it from the Actions tab -> Build Android -> Run workflow. The run waits for Expo to finish
+# (10-20 min, free tier may queue) and shows the result and APK link as annotations.
 #
 # Repository secret:   EXPO_TOKEN            expo.dev -> Account settings -> Access tokens
 # The Supabase URL and anon key live in config/public.env. They are public by design
@@ -50,4 +50,12 @@ jobs:
         # EAS_NO_VCS uploads the working folder (with .env), filtered by .easignore.
         env:
           EAS_NO_VCS: '1'
-        run: eas build --platform android --profile ${{ inputs.profile || 'preview' }} --non-interactive --no-wait
+        run: eas build --platform android --profile ${{ inputs.profile || 'preview' }} --non-interactive --wait --json > build.json
+      - name: Report result
+        if: always()
+        run: |
+          [ -s build.json ] || exit 0
+          status=$(jq -r '.[0].status' build.json)
+          echo "::notice::Expo build status=$status id=$(jq -r '.[0].id' build.json)"
+          [ "$status" = "FINISHED" ] && echo "::notice::APK: $(jq -r '.[0].artifacts.buildUrl // .[0].artifacts.applicationArchiveUrl' build.json)" || true
+          [ "$status" = "ERRORED" ] && echo "::error::$(jq -r '.[0].error.errorCode // ""' build.json): $(jq -r '.[0].error.message // ""' build.json | tr '\n' ' ' | cut -c1-900)" || true
