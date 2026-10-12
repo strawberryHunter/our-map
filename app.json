@@ -21,7 +21,12 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.strawberryhunter.ourmap"
+      "package": "com.strawberryhunter.ourmap",
+      "blockedPermissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -30,7 +35,6 @@
       "expo-router",
       "expo-status-bar",
       "expo-image",
-      "expo-secure-store",
       "@maplibre/maplibre-react-native",
       "react-native-fast-tflite",
       [
@@ -47,7 +51,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "얼굴을 등록할 사진을 고를 때 사진에 접근해요."
+          "photosPermission": "얼굴을 등록할 사진을 고를 때 사진에 접근해요.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       "expo-build-properties"

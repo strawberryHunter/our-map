@@ -63,7 +63,10 @@ export async function runSync(opts: {
     .orderBy({ key: AssetField.CREATION_TIME, ascending: true })
     .limit(MAX_PER_SYNC)
     .exe();
-  if (!assets.length) return { memories: 0, photos: 0 };
+  if (!assets.length) {
+    await retryMissingSummaries(userId, people);
+    return { memories: 0, photos: 0 };
+  }
 
   // Skip anything this phone already uploaded.
   const uploaded = new Set<string>();
@@ -157,7 +160,30 @@ export async function runSync(opts: {
   }
 
   await AsyncStorage.setItem(lastSyncKey(userId), String(nextSince));
+  await retryMissingSummaries(userId, people);
   return { memories: memCount, photos: photoCount };
+}
+
+/** Memories this phone made whose AI summary failed earlier (e.g. API down): try again, a few per run. */
+async function retryMissingSummaries(userId: string, people: PersonRow[]) {
+  const { data } = await supabase.from('memories').select('*').eq('created_by', userId).is('summary', null).limit(3);
+  for (const m of (data ?? []) as Memory[]) {
+    const { data: rows } = await supabase.from('photos').select('source_asset').eq('memory_id', m.id).eq('uploaded_by', userId);
+    const photos: Candidate[] = [];
+    for (const r of rows ?? []) {
+      try {
+        const asset = new Asset(r.source_asset);
+        const info = await asset.getInfo();
+        photos.push({ id: asset.id, asset, uri: info.uri, width: info.width, height: info.height, time: info.creationTime ?? 0, lat: m.lat, lng: m.lng, people: [] });
+      } catch (e) {
+        console.warn('photo gone from gallery', r.source_asset, e);
+      }
+    }
+    if (!photos.length) continue;
+    const names = people.filter(p => m.people.includes(p.id)).map(p => p.name);
+    const o = { start: Date.parse(m.started_at), end: Date.parse(m.ended_at), lat: m.lat, lng: m.lng };
+    await summarize(m.id, photos, o, names).catch(e => console.warn('summary retry failed', e));
+  }
 }
 
 async function findOrCreateMemory(coupleId: string, userId: string, o: { start: number; end: number; lat: number | null; lng: number | null }) {

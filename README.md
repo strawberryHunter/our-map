@@ -26,7 +26,30 @@
 | 지도 | MapLibre + OpenFreeMap 타일 (무료, API 키 불필요) |
 | 영상 | WebView 안에서 maplibre-gl + canvas + MediaRecorder 사용, mp4 또는 webm |
 
-얼굴 정렬 방식은 공개 테스트 사진으로 검증했어요. 같은 사람은 0.83, 다른 사람은 −0.1 ~ 0.0이 나왔어요. 내 사진으로 확인하려면 `scripts/test-face.js`를 쓰면 돼요.
+## 검증
+
+```bash
+pip install ai-edge-litert numpy        # 얼굴 모델 테스트용 (없으면 그 테스트만 건너뜀)
+npx playwright-core install chromium-headless-shell   # 영상 테스트용
+npm run verify                           # 전체 검사, 약 2분
+npm run verify -- --quick                # 느린 단계(영상, 네이티브 번들, 권한) 빼고
+npm run verify -- sync db                # 이름이 맞는 단계만
+```
+
+| 단계 | 확인하는 것 |
+|---|---|
+| typecheck | 앱과 테스트의 타입 오류 |
+| cluster | 사진 묶기: 시간 공백, 이동, GPS 없음/튐, 1만 장 성능 |
+| face | 실제 TFLite 모델로 얼굴 검출·같은 사람 구분 (같은 사람 0.83, 다른 사람 ~0) |
+| sync | 가짜 갤러리·서버로 동기화 전체 흐름: 건너뛰기, 대기, 두 폰 합치기, 네트워크 끊김 후 재시도, 중복 방지 |
+| db | SQL 마이그레이션 실행, 커플 연결, 다른 커플 데이터 접근 차단 (PGlite) |
+| summary | AI 응답이 이상해도 앱이 안 깨지는지 |
+| privacy | 폰 밖으로 나가는 모든 호출이 목록에 있는지, 분석 SDK·위치 로그 없는지 |
+| config | iOS/Android 권한: 필요한 건 한글 설명과 함께 있고, 안 쓰는 건 없는지 |
+| video | 헤드리스 크롬에서 실제로 영상을 녹화해 파일이 끝까지 오는지, 해상도·프레임 수 |
+| bundle | Android/iOS JS 번들 빌드 |
+
+실패하면 어떤 테스트가 어느 줄에서 무엇을 기대했고 실제로 뭐가 나왔는지 출력하고, `verify/out/report.md`에 정리해요. 영상 테스트는 `verify/out/`에 장소별 프레임과 영상 파일도 남겨요. 데이터가 어디로 나가는지는 `verify/out/privacy.md`에 표로 정리돼요.
 
 ## 처음 세팅
 

@@ -5,6 +5,7 @@
 // SUPABASE_URL and SUPABASE_ANON_KEY are provided by the platform.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { parseSummary } from "./parse.ts";
 
 const MODEL = Deno.env.get("SUMMARY_MODEL") ?? "claude-haiku-5-5";
 
@@ -86,14 +87,8 @@ Deno.serve(async (req) => {
     });
     if (!r.ok) throw new Error(`Claude API ${r.status}: ${await r.text()}`);
     const msg = await r.json();
-    const text: string = msg.content?.find((c: { type: string }) => c.type === "text")?.text ?? "{}";
-    const json = JSON.parse(text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1));
-
-    const update = {
-      title: String(json.title ?? "").slice(0, 60) || null,
-      place: String(json.place ?? place ?? "").slice(0, 80) || null,
-      summary: String(json.summary ?? "").slice(0, 400) || null,
-    };
+    const text: string = msg.content?.find((c: { type: string }) => c.type === "text")?.text ?? "";
+    const update = parseSummary(text, place);
     const { error } = await supabase.from("memories").update(update).eq("id", body.memoryId);
     if (error) throw error;
 

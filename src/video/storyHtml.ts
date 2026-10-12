@@ -65,8 +65,9 @@ function wrap(text, maxW, maxLines) {
   return lines;
 }
 function cover(img, x, y, w, h) {
+  // Crop toward the upper part of tall photos, where faces usually are.
   const s = Math.max(w / img.width, h / img.height), sw = w / s, sh = h / s;
-  ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, x, y, w, h);
+  ctx.drawImage(img, (img.width - sw) / 2, (img.height - sh) * 0.15, sw, sh, x, y, w, h);
 }
 const ease = (t) => t < 0 ? 0 : t > 1 ? 1 : 1 - Math.pow(1 - t, 3);
 
@@ -89,7 +90,8 @@ function drawFrame(now) {
     ctx.textAlign = 'left';
   } else if (overlay.kind === 'stop') {
     const s = overlay.stop, imgs = overlay.imgs;
-    const cx = 60, cw = W - 120, ph = 720, cy = H - 60 - (ph + 300) + (1 - fadeIn) * 60;
+    // Card sits in the lower part so the pin (upper third of the frame) stays visible.
+    const cx = 60, cw = W - 120, ph = imgs.length ? 560 : 0, cy = H - 48 - (ph + 300) + (1 - fadeIn) * 60;
     ctx.shadowColor = 'rgba(0,0,0,.25)'; ctx.shadowBlur = 40; ctx.shadowOffsetY = 12;
     roundRect(cx, cy, cw, ph + 300, 36); ctx.fillStyle = '#fff'; ctx.fill();
     ctx.shadowColor = 'transparent';
@@ -101,9 +103,9 @@ function drawFrame(now) {
       const zw = (cw - 40) * z, zh = ph * z;
       cover(imgs[i], cx + 20 - (zw - (cw - 40)) / 2, cy + 20 - (zh - ph) / 2, zw, zh);
       if (i > 0 && local < 0.15) { ctx.globalAlpha = a * (1 - local / 0.15); cover(imgs[i - 1], cx + 20, cy + 20, cw - 40, ph); ctx.globalAlpha = a; }
-    } else { ctx.fillStyle = '#E1E4EA'; ctx.fillRect(cx + 20, cy + 20, cw - 40, ph); }
+    }
     ctx.restore();
-    let y = cy + ph + 78;
+    let y = cy + ph + (ph ? 78 : 70);
     ctx.fillStyle = '#5E6676'; ctx.font = '500 30px ' + FONT; ctx.fillText(s.date, cx + 44, y);
     ctx.fillStyle = '#E2574C'; ctx.textAlign = 'right'; ctx.fillText(s.place, cx + cw - 44, y); ctx.textAlign = 'left';
     y += 64; ctx.fillStyle = '#1D2230'; ctx.font = '800 50px ' + FONT;
@@ -172,6 +174,7 @@ async function run() {
     await fly; await idle();
     line.push([s.lng, s.lat]);
     map.getSource('pins').setData({ type: 'FeatureCollection', features: line.map(c => ({ type: 'Feature', geometry: { type: 'Point', coordinates: c } })) });
+    await new Promise(r => map.once('idle', r)); // pin is drawn before the card appears
     await show({ kind: 'stop', stop: s, imgs: imgs[i] }, 3400);
   }
   counter = '';

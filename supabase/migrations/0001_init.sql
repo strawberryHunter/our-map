@@ -75,7 +75,11 @@ alter table public.photos enable row level security;
 
 create policy "own couple" on public.couples for select using (id = public.my_couple());
 create policy "own couple members" on public.members for select using (couple_id = public.my_couple());
-create policy "update own name" on public.members for update using (user_id = auth.uid());
+create policy "update own name" on public.members for update
+  using (user_id = auth.uid()) with check (user_id = auth.uid() and couple_id = public.my_couple());
+-- Members may only change their display name; joining/leaving goes through the functions below.
+revoke insert, update, delete on public.members from anon, authenticated;
+grant update (display_name) on public.members to authenticated;
 
 create policy "couple rw" on public.people for all
   using (couple_id = public.my_couple()) with check (couple_id = public.my_couple());

@@ -34,25 +34,44 @@ function center<P extends PhotoMeta>(photos: P[]) {
   return { lat: med(geo.map(p => p.lat!)), lng: med(geo.map(p => p.lng!)) };
 }
 
+const RECENT_FIXES = 15; // running center uses the median of the last few GPS fixes
+
 export function clusterPhotos<P extends PhotoMeta>(input: P[], gapMs = GAP_MS, moveKm = MOVE_KM): Outing<P>[] {
   const photos = [...input].sort((a, b) => a.time - b.time);
   const out: Outing<P>[] = [];
   let cur: P[] = [];
+  let recent: P[] = []; // last few geotagged photos of the current outing
   const flush = () => {
     if (!cur.length) return;
-    const c = center(cur);
-    out.push({ start: cur[0].time, end: cur[cur.length - 1].time, ...c, photos: cur });
+    out.push({ start: cur[0].time, end: cur[cur.length - 1].time, ...center(cur), photos: cur });
     cur = [];
+    recent = [];
   };
-  for (const p of photos) {
+  const far = (c: { lat: number | null; lng: number | null }, q: P) =>
+    q.lat != null && q.lng != null && c.lat != null && c.lng != null && distanceKm(c.lat, c.lng, q.lat, q.lng) > moveKm;
+
+  for (let i = 0; i < photos.length; i++) {
+    const p = photos[i];
     if (cur.length) {
       const last = cur[cur.length - 1];
-      const c = center(cur);
-      const moved = p.lat != null && p.lng != null && c.lat != null && c.lng != null &&
-        distanceKm(c.lat, c.lng, p.lat, p.lng) > moveKm;
-      if (p.time - last.time > gapMs || moved) flush();
+      let split = p.time - last.time > gapMs;
+      if (!split) {
+        const c = center(recent);
+        if (far(c, p)) {
+          // A single far fix followed by a fix back near the center is GPS noise, not a move.
+          let next: P | undefined;
+          for (let j = i + 1; j < photos.length && !next; j++) if (photos[j].lat != null && photos[j].lng != null) next = photos[j];
+          const isOutlier = next != null && next.time - p.time <= gapMs && !far(c, next);
+          split = !isOutlier;
+        }
+      }
+      if (split) flush();
     }
     cur.push(p);
+    if (p.lat != null && p.lng != null) {
+      recent.push(p);
+      if (recent.length > RECENT_FIXES) recent.shift();
+    }
   }
   flush();
   return out;

@@ -40,4 +40,4 @@ yarn-error.*
 /ios
 /android
 .env
-scripts/.core.js
+verify/out/

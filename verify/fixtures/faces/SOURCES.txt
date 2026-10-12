@@ -1,0 +1,1 @@
+Face photos: ageitgey/face_recognition examples (MIT), OpenCV samples (lena, messi5). Downscaled to 720px for tests.
