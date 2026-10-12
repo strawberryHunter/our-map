@@ -1,13 +1,17 @@
 {
   "expo": {
-    "name": "our-map",
+    "name": "우리 지도",
     "slug": "our-map",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.strawberryhunter.ourmap",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -16,10 +20,41 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.strawberryhunter.ourmap"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-image",
+      "expo-secure-store",
+      "@maplibre/maplibre-react-native",
+      "react-native-fast-tflite",
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "둘이 함께 나온 사진을 찾아 추억으로 정리하려고 사진에 접근해요.",
+          "savePhotosPermission": "만든 지도 영상을 갤러리에 저장해요.",
+          "isAccessMediaLocationEnabled": true,
+          "granularPermissions": [
+            "photo"
+          ]
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "얼굴을 등록할 사진을 고를 때 사진에 접근해요."
+        }
+      ],
+      "expo-build-properties"
+    ],
+    "scheme": "ourmap",
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
